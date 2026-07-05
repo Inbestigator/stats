@@ -1,4 +1,5 @@
 type RepoNode = {
+  name: string;
   stargazerCount: number;
   primaryLanguage: { name: string } | null;
 };
@@ -96,6 +97,7 @@ async function fetchUserData(login: string, token: string) {
             }
 
             nodes {
+              name
               stargazerCount
 
               primaryLanguage {
@@ -160,9 +162,16 @@ function topLanguage(repos: RepoNode[]) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 }
 
-export async function getGitHubStats(login: string, token: string) {
-  const start = performance.now();
+function highestStarRepo(repos: RepoNode[]) {
+  return repos.reduce<RepoNode | undefined>((best, repo) => {
+    if (!best || repo.stargazerCount > best.stargazerCount) {
+      return repo;
+    }
+    return best;
+  }, undefined)?.name;
+}
 
+export async function getGitHubStats(login: string, token: string) {
   const {
     name,
     login: actualLogin,
@@ -184,6 +193,6 @@ export async function getGitHubStats(login: string, token: string) {
     repositories: repositoryCount,
     stars: totalStars(repos),
     topLanguage: topLanguage(repos),
-    generationTimeMs: performance.now() - start,
+    highestStarRepo: highestStarRepo(repos),
   };
 }

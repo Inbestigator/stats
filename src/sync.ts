@@ -1,14 +1,8 @@
 import { botEnv, callDiscord } from "dressed/utils";
-import { DEFAULT_SYNC_STATS, type SyncConfig, type SyncStatKey } from "./db.ts";
+import { DEFAULT_SYNC_STATS, type SyncConfig } from "./db.ts";
 import { getGitHubStats } from "./stats.ts";
 
-export const statDefinitions: Record<
-  SyncStatKey,
-  {
-    title: string;
-    value: (data: Awaited<ReturnType<typeof getGitHubStats>>) => string | undefined;
-  }
-> = {
+export const statDefinitions = {
   followers: { title: "Followers", value: (data) => data.followers.toString() },
   following: { title: "Following", value: (data) => data.following.toString() },
   contributions: {
@@ -24,7 +18,17 @@ export const statDefinitions: Record<
     title: "Favourite language",
     value: (data) => data.topLanguage,
   },
-};
+  most_starred: {
+    title: "Most starred",
+    value: (data) => data.highestStarRepo,
+  },
+} satisfies Record<
+  string,
+  {
+    title: string;
+    value: (data: Awaited<ReturnType<typeof getGitHubStats>>) => string | undefined;
+  }
+>;
 
 export default async function sync(
   userId: string,

@@ -1,4 +1,5 @@
 import { createClient } from "@libsql/client";
+import type { statDefinitions } from "./sync.ts";
 
 export const libsql = createClient({
   url: process.env.DB_URL ?? "file:local.db",
@@ -17,7 +18,7 @@ export interface PendingInitRecord {
   interaction_token: string;
 }
 
-export type SyncStatKey = "followers" | "following" | "contributions" | "stars" | "repositories" | "favourite_language";
+export type SyncStatKey = keyof typeof statDefinitions;
 
 export type SyncConfig = (SyncStatKey | undefined)[];
 
