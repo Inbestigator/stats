@@ -33,9 +33,10 @@ export async function GET(req: Request) {
       });
       const userData = (await userRes.json()) as { login: string };
       if (userRes.ok) {
-        await Promise.all([
-          upsertUser(pendingInit.discord_id, userData.login, access_token),
-          sync(pendingInit.discord_id, userData.login, access_token),
+        const [upsertRes] = await Promise.allSettled([
+          upsertUser(pendingInit.discord_id, userData.login, access_token).then(() =>
+            sync(pendingInit.discord_id, userData.login, access_token, undefined, true),
+          ),
           deletePendingInit(state),
           editWebhookMessage(
             botEnv.DISCORD_APP_ID,
@@ -44,9 +45,22 @@ export async function GET(req: Request) {
             LinkPage(pendingInit.state, 3),
           ),
         ]);
+        if (upsertRes.status === "rejected") {
+          return Response.redirect(
+            `https://gstats-widget.vercel.app/error.html?m=${encodeURIComponent("There was an error saving your details or syncing your stats. Please try again")}`,
+          );
+        }
+        return Response.redirect("https://gstats-widget.vercel.app/success.html");
       }
+    } else if (pendingInit) {
+      await deletePendingInit(state);
+      return Response.redirect(
+        `https://gstats-widget.vercel.app/error.html?m=${encodeURIComponent("There was an error fetching your access token. Please run `/sync` to try again")}`,
+      );
     }
   }
 
-  return Response.redirect("https://gstats-widget.vercel.app/success.html");
+  return Response.redirect(
+    `https://gstats-widget.vercel.app/error.html?m=${encodeURIComponent("Your session has expired. Please run `/sync` to try again")}`,
+  );
 }

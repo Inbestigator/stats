@@ -6,6 +6,11 @@
       "source": "/",
       "destination": "https://github.com/Inbestigator/github-stats",
       "permanent": true
+    },
+    {
+      "source": "/install",
+      "destination": "https://discord.com/oauth2/authorize?client_id=1522899191964368977",
+      "permanent": true
     }
   ]
 }

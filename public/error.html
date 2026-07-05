@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authorization Failed</title>
+    <style>
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background:
+          radial-gradient(circle at bottom, rgba(239, 68, 68, 0.25), transparent 40%), #0d1117;
+        color: #f0f6fc;
+        text-align: center;
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 64px;
+        font-weight: 425;
+        letter-spacing: -2.24px;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        color: #ddd;
+        font-size: 18px;
+        font-weight: 400;
+      }
+
+      .command {
+        background-color: oklab(0.57742 0.0140622 -0.208604 / 0.239216);
+        border-radius: 3px;
+        color: oklab(0.751275 0.00699186 -0.127347);
+        font-family: inherit;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 22px;
+        padding: 0 2px 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Authorization failed</h1>
+      <p id="description">Please close this tab and try again</p>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const message = params.get("m");
+
+      if (message) {
+        const description = document.getElementById("description");
+        description.innerHTML = escapeText(message).replace(
+          /`([^`]+)`/g,
+          (_, code) => `<span class="command">${code}</span>`,
+        );
+      }
+
+      function escapeText(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>
