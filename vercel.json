@@ -1,0 +1,11 @@
+{
+  "buildCommand": "dressed build",
+  "outputDirectory": "public",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://github.com/Inbestigator/github-stats",
+      "permanent": true
+    }
+  ]
+}
