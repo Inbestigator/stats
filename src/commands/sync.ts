@@ -8,7 +8,7 @@ export const config = {
 } satisfies CommandConfig;
 
 export default async function (interaction: CommandInteraction<typeof config>) {
-  const [user, selectedStats] = await Promise.all([
+  const [user, userConfig] = await Promise.all([
     getUser(interaction.user.id),
     getUserConfig(interaction.user.id),
     interaction.deferReply({ ephemeral: true }),
@@ -22,8 +22,8 @@ export default async function (interaction: CommandInteraction<typeof config>) {
     interaction.user.id,
     user.github_login,
     user.github_token,
-    selectedStats,
-    Date.now() - (user.profile?.savedAt ?? 0) > 30 * 60 * 1000,
+    userConfig,
+    Date.now() - (user.cached_stats?.savedAt ?? 0) > 30 * 60 * 1000,
   );
   return interaction.editReply("Your stats have been synced");
 }

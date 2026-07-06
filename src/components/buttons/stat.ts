@@ -1,18 +1,17 @@
 import type { Params } from "@dressed/matcher";
 import type { MessageComponentInteraction } from "dressed";
-import { ConfigPage, patchWidgetTop } from "../../commands/configure.ts";
-import type { SyncConfig } from "../../db.ts";
+import { ConfigPage, getEncodedInfo } from "../../commands/configure.ts";
 
-export const pattern = "stat-:index-:selectedStats";
+export const pattern = "config-stat-:index";
 
 export default function (interaction: MessageComponentInteraction, props: Params<typeof pattern>) {
-  const selectedStats = props.selectedStats.split(",").map((v) => v || undefined) as SyncConfig;
+  const info = getEncodedInfo(interaction.message);
   const index = Number(props.index);
-  const curr = selectedStats[index];
+  const curr = info.config.stats[index];
 
-  if (curr) selectedStats[index] = undefined;
+  if (curr) info.config.stats[index] = undefined;
 
   return interaction.update({
-    components: patchWidgetTop(ConfigPage(selectedStats, undefined, !curr ? index : undefined), interaction.message),
+    components: ConfigPage(info, !curr ? index : undefined),
   });
 }

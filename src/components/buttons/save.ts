@@ -1,17 +1,18 @@
-import type { Params } from "@dressed/matcher";
 import abseil from "abseil";
 import type { MessageComponentInteraction } from "dressed";
-import { ConfigPage, patchWidgetTop } from "../../commands/configure.ts";
-import { type SyncConfig, setUserConfig } from "../../db.ts";
+import { ConfigPage, getEncodedInfo } from "../../commands/configure.ts";
+import { setUserConfig } from "../../db.ts";
 
-export const pattern = "save-stats-:selectedStats";
+export const pattern = "config-save";
 
-export default async function (interaction: MessageComponentInteraction, props: Params<typeof pattern>) {
-  const selectedStats = props.selectedStats.split(",").map((v) => v || undefined) as SyncConfig;
+export default async function (interaction: MessageComponentInteraction) {
+  const info = getEncodedInfo(interaction.message);
 
-  await setUserConfig(interaction.user.id, selectedStats);
+  await setUserConfig(interaction.user.id, info.config);
 
-  const components = patchWidgetTop(ConfigPage(selectedStats, true), interaction.message);
+  info.originalConfig = info.config;
+
+  const components = ConfigPage(info);
 
   abseil(components).initial("Container").last("Section")?.accessory("Button").update({ label: "Saved" });
 

@@ -1,48 +1,85 @@
 import { botEnv, callDiscord } from "dressed/utils";
-import { DEFAULT_SYNC_STATS, type SyncConfig, setCachedProfile } from "./db.ts";
+import Mustache from "mustache";
+import { DEFAULT_USER_CONFIG, type SyncConfig, setCachedStats } from "./db.ts";
 import { getGitHubStats } from "./stats.ts";
 
 export const statDefinitions = {
-  followers: { title: "Followers", value: (data) => data.followers.toLocaleString() },
-  following: { title: "Following", value: (data) => data.following.toLocaleString() },
-  contributions: { title: "Contributions this year", value: (data) => data.contributions.toLocaleString() },
-  created_at: { title: "Created account", value: (data) => data.createdAt },
-  stars: { title: "Stars", value: (data) => data.stars.toLocaleString() },
-  average_stars: { title: "Average star count", value: (data) => data.averageStars.toFixed(1) },
-  forks: { title: "Forks", value: (data) => data.forks.toLocaleString() },
-  watchers: { title: "Watchers", value: (data) => data.watchers.toLocaleString() },
-  repositories: { title: "Repositories", value: (data) => data.repositories.toLocaleString() },
-  active_repos: { title: "Active repositories", value: (data) => data.activeRepos.toLocaleString() },
-  most_starred: { title: "Most starred", value: (data) => data.highestStarRepo },
-  languages: { title: "Languages used", value: (data) => data.languageDiversity.toLocaleString() },
-  favourite_language: { title: "Favourite language", value: (data) => data.topLanguage },
+  fs: { title: "Followers", value: (data) => data.followers.toLocaleString() },
+  fg: { title: "Following", value: (data) => data.following.toLocaleString() },
+  cb: { title: "Contributions this year", value: (data) => data.contributions.toLocaleString() },
+  ca: { title: "Created account", value: (data) => data.createdAt },
+  s: { title: "Stars", value: (data) => data.stars.toLocaleString() },
+  as: { title: "Average star count", value: (data) => data.averageStars.toFixed(1) },
+  f: { title: "Forks", value: (data) => data.forks.toLocaleString() },
+  w: { title: "Watchers", value: (data) => data.watchers.toLocaleString() },
+  r: { title: "Repositories", value: (data) => data.repositories.toLocaleString() },
+  ar: { title: "Active repositories", value: (data) => data.activeRepos.toLocaleString() },
+  ms: { title: "Most starred", value: (data) => data.highestStarRepo },
+  l: { title: "Languages used", value: (data) => data.languageDiversity.toLocaleString() },
+  fl: { title: "Favourite language", value: (data) => data.topLanguage },
 } satisfies Record<
   string,
   { title: string; value: (data: Awaited<ReturnType<typeof getGitHubStats>>) => string | undefined }
 >;
 
+export function createMustacheView(stats: Awaited<ReturnType<typeof getGitHubStats>>) {
+  return {
+    user: {
+      name: stats.name,
+      login: stats.login,
+      bio: stats.bio,
+      avatarUrl: stats.avatarUrl,
+      followers: stats.followers,
+      following: stats.following,
+      contributions: stats.contributions,
+      topLanguage: stats.topLanguage,
+      createdAt: stats.createdAt,
+    },
+    repos: {
+      count: stats.repositories,
+      stars: stats.stars,
+      mostStarred: stats.highestStarRepo,
+      forks: stats.forks,
+      watchers: stats.watchers,
+      averageStars: stats.averageStars,
+      activeRepos: stats.activeRepos,
+      languageDiversity: stats.languageDiversity,
+    },
+  };
+}
+
 export default async function sync(
   userId: string,
   login: string,
   token: string,
-  selectedStats: SyncConfig = [...DEFAULT_SYNC_STATS],
+  config: SyncConfig = { ...DEFAULT_USER_CONFIG },
   updateCache?: boolean,
 ) {
   const data = await getGitHubStats(login, token);
   const dynamic: { type: number; name: string; value: string | number }[] = [
     { type: 1, name: "login", value: data.login },
-    { type: 3, name: "avatar", value: { url: data.avatarUrl } as never },
   ];
 
-  if (data.name) {
-    dynamic.push({ type: 1, name: "name", value: data.name });
+  if (config.avatar) {
+    dynamic.push({ type: 3, name: "avatar", value: { url: data.avatarUrl } as never });
   }
 
-  if (data.bio) {
-    dynamic.push({ type: 1, name: "bio", value: data.bio });
+  const [bio1, bio2, bio3] = config.bio.split("\n");
+  const view = createMustacheView(data);
+
+  if (bio1) {
+    dynamic.push({ type: 1, name: "bio-1", value: Mustache.render(bio1, view) });
   }
 
-  for (const [index, stat] of selectedStats.entries()) {
+  if (bio2) {
+    dynamic.push({ type: 1, name: "bio-2", value: Mustache.render(bio2, view) });
+  }
+
+  if (bio3) {
+    dynamic.push({ type: 1, name: "bio-3", value: Mustache.render(bio3, view) });
+  }
+
+  for (const [index, stat] of config.stats.entries()) {
     if (!stat) continue;
 
     const definition = statDefinitions[stat];
@@ -58,7 +95,6 @@ export default async function sync(
       method: "PATCH",
       body: { data: { dynamic } },
     }),
-    updateCache &&
-      setCachedProfile(userId, { name: data.name, login: data.login, bio: data.bio, avatarUrl: data.avatarUrl }),
+    updateCache && setCachedStats(userId, data),
   ]);
 }
