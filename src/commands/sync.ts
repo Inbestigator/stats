@@ -1,5 +1,6 @@
+import { generateState } from "arctic";
 import { ActionRow, Button, type CommandConfig, type CommandInteraction } from "dressed";
-import { botEnv } from "dressed/utils";
+import { discord, github } from "../auth.ts";
 import { getUser, getUserConfig, insertPendingInit } from "../db.ts";
 import sync from "../sync.ts";
 
@@ -14,7 +15,7 @@ export default async function (interaction: CommandInteraction<typeof config>) {
     interaction.deferReply({ ephemeral: true }),
   ]);
   if (!user) {
-    const state = crypto.randomUUID();
+    const state = generateState();
     await insertPendingInit(state, interaction.user.id, interaction.token);
     return interaction.editReply(LinkPage(state));
   }
@@ -40,15 +41,11 @@ export function LinkPage(state: string, stage = 1) {
     components: [
       ActionRow(
         Button({
-          url: `https://discord.com/oauth2/authorize?client_id=${botEnv.DISCORD_APP_ID}&response_type=code&scope=openid+sdk.social_layer&state=${state}`,
+          url: discord.createAuthorizationURL(state, null, ["openid", "sdk.social_layer"]).href,
           label: "Authorize",
           disabled: stage !== 1,
         }),
-        Button({
-          url: `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&state=${state}`,
-          label: "Link GitHub",
-          disabled: stage !== 2,
-        }),
+        Button({ url: github.createAuthorizationURL(state, []).href, label: "Link GitHub", disabled: stage !== 2 }),
       ),
     ],
   };

@@ -10,6 +10,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "abseil": "^0.4.1",
+    "arctic": "^3.7.0",
     "dressed": "^2.0.0-rc.3",
     "mustache": "^4.2.0",
     "vercel": "^54.20.1"

@@ -116,14 +116,14 @@ function encodeEmoji(input: string) {
   return Array.from(input)
     .map((char) => {
       if (/^[A-Za-z0-9]$/.test(char)) return char;
-      return `_${char.codePointAt(0)?.toString(16).padStart(6, "0")}`;
+      return `_${char.codePointAt(0)?.toString(36)}`;
     })
     .join("");
 }
 
 function decodeEmoji(input: string) {
-  return input.replace(/_([0-9a-fA-F]{6})/g, (_, hex) => {
-    const codePoint = Number.parseInt(hex, 16);
+  return input.replace(/_([0-9a-fA-F]{,4})/g, (_, hex) => {
+    const codePoint = Number.parseInt(hex, 36);
     return String.fromCodePoint(codePoint);
   });
 }
